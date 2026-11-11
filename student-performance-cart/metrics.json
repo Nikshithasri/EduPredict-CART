@@ -1,0 +1,35 @@
+{
+    "train_accuracy": 94.0,
+    "test_accuracy": 88.0,
+    "total_samples": 250,
+    "train_samples": 200,
+    "test_samples": 50,
+    "pass_count": 201,
+    "fail_count": 49,
+    "confusion_matrix": {
+        "tn": 7,
+        "fp": 3,
+        "fn": 3,
+        "tp": 37
+    },
+    "classification_report": {
+        "fail": {
+            "precision": 70.0,
+            "recall": 70.0,
+            "f1": 70.0,
+            "support": 10
+        },
+        "pass": {
+            "precision": 92.5,
+            "recall": 92.5,
+            "f1": 92.5,
+            "support": 40
+        }
+    },
+    "feature_importances": {
+        "Attendance (%)": 36.62,
+        "Study Hours / Day": 19.99,
+        "Internal Marks": 40.47,
+        "Assignment Score": 2.91
+    }
+}

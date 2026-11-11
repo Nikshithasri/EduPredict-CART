@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Insights & Visualizations | CART Machine Learning</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Modal for Full-Resolution Tree Zoom */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(4px);
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+        }
+        .modal-content {
+            background-color: white;
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            max-width: 95vw;
+            max-height: 90vh;
+            overflow: auto;
+            position: relative;
+        }
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1.25rem;
+            font-size: 1.75rem;
+            font-weight: bold;
+            color: var(--navy-900);
+            cursor: pointer;
+            z-index: 10;
+            background: #f1f5f9;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        .modal-close:hover {
+            background: #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('home') }}" class="nav-brand">
+                <span class="brand-badge">CART ML</span>
+                <div>
+                    <span class="brand-title">EduPredict</span>
+                    <span class="brand-subtitle">Academic Intelligence</span>
+                </div>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('home') }}" class="nav-link">Home</a></li>
+                <li><a href="{{ url_for('predict') }}" class="nav-link">Predict</a></li>
+                <li><a href="{{ url_for('insights') }}" class="nav-link active">Model Insights</a></li>
+                <li><a href="{{ url_for('predict') }}" class="nav-link nav-cta-btn">Start Prediction &rarr;</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        
+        <div class="page-header">
+            <span class="tag-badge">Analytics &amp; Model Interpretability</span>
+            <h1>CART Model Performance &amp; Tree Visualizations</h1>
+            <p>
+                Comprehensive evaluation, mathematical breakdown, decision tree visual architecture, confusion matrix, and feature importances for the Student Performance Classifier.
+            </p>
+        </div>
+
+        <!-- Top Metrics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card green">
+                <div class="stat-label">Testing Accuracy</div>
+                <div class="stat-value" style="color: var(--success);">{{ metrics.test_accuracy }}%</div>
+                <div class="stat-subtext">On unseen test partition (20%)</div>
+            </div>
+            <div class="stat-card blue">
+                <div class="stat-label">Training Accuracy</div>
+                <div class="stat-value" style="color: var(--blue-accent);">{{ metrics.train_accuracy }}%</div>
+                <div class="stat-subtext">On training partition (80%)</div>
+            </div>
+            <div class="stat-card navy">
+                <div class="stat-label">Total Student Records</div>
+                <div class="stat-value">{{ metrics.total_samples }}</div>
+                <div class="stat-subtext">{{ metrics.train_samples }} Train &bull; {{ metrics.test_samples }} Test</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Splitting Metric</div>
+                <div class="stat-value" style="font-size: 1.5rem; color: var(--purple-accent);">Gini Impurity</div>
+                <div class="stat-subtext">Optimal binary split criterion</div>
+            </div>
+        </div>
+
+        <!-- Section 1: Decision Tree Visualization -->
+        <section class="insight-section">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 1rem;">
+                    <div>
+                        <h2 class="card-title" style="margin-bottom: 0.25rem;">
+                            <span style="color: var(--purple-accent);">&#127795;</span> CART Decision Tree Diagram
+                        </h2>
+                        <p class="card-desc" style="margin-bottom: 0;">
+                            Visual representation of hierarchical decision nodes, test conditions, Gini impurity values, and class distributions.
+                        </p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="openTreeModal()">
+                        <span>&#128269;</span> Expand High-Res View
+                    </button>
+                </div>
+
+                <div class="image-preview-card" style="cursor: pointer;" onclick="openTreeModal()">
+                    <img src="{{ url_for('static', filename='images/decision_tree.png') }}" alt="CART Decision Tree Diagram">
+                    <p class="image-caption">
+                        Click on the image above or "Expand High-Res View" to inspect each individual node's split condition, Gini value, and class ratio.
+                    </p>
+                </div>
+
+                <!-- Interpretation Guide -->
+                <div style="background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1.25rem; margin-top: 1.25rem;">
+                    <h3 style="font-size: 1rem; color: var(--navy-900); margin-bottom: 0.5rem;">
+                        How to Read this CART Tree:
+                    </h3>
+                    <ul style="padding-left: 1.25rem; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">
+                        <li><strong>Root Node:</strong> Topmost node containing all training instances. The feature with the highest information gain (greatest reduction in Gini impurity) is selected as the first split.</li>
+                        <li><strong>Branching:</strong> Left branch corresponds to condition evaluated as <em>True</em> (&le; threshold); right branch corresponds to <em>False</em> (&gt; threshold).</li>
+                        <li><strong>Gini Value:</strong> Ranges from <code>0.0</code> (pure leaf node: 100% of samples belong to one class) to <code>0.5</code> (maximum impurity for two equally balanced classes).</li>
+                        <li><strong>Color Coding:</strong> Orange tint indicates probability towards <strong>Fail</strong>; Blue tint indicates probability towards <strong>Pass</strong>. Deeper color denotes higher purity.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Confusion Matrix & Feature Importance Grid -->
+        <div class="grid-2col insight-section">
+            
+            <!-- Confusion Matrix Card -->
+            <div class="card">
+                <h2 class="card-title">
+                    <span style="color: var(--blue-accent);">&#9638;</span> Confusion Matrix
+                </h2>
+                <p class="card-desc">
+                    Evaluated on <strong>{{ metrics.test_samples }} unseen test student samples</strong> (20% holdout).
+                </p>
+
+                <div class="image-preview-card">
+                    <img src="{{ url_for('static', filename='images/confusion_matrix.png') }}" alt="Confusion Matrix">
+                </div>
+
+                <div style="margin-top: 1rem;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Metric Metric</th>
+                                <th>Value</th>
+                                <th>Academic Significance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>True Negatives (TN)</strong></td>
+                                <td>{{ metrics.confusion_matrix.tn }}</td>
+                                <td>Correctly identified at-risk failing students</td>
+                            </tr>
+                            <tr>
+                                <td><strong>True Positives (TP)</strong></td>
+                                <td>{{ metrics.confusion_matrix.tp }}</td>
+                                <td>Correctly identified passing students</td>
+                            </tr>
+                            <tr>
+                                <td><strong>False Positives (FP)</strong></td>
+                                <td>{{ metrics.confusion_matrix.fp }}</td>
+                                <td>Failing students incorrectly predicted to pass</td>
+                            </tr>
+                            <tr>
+                                <td><strong>False Negatives (FN)</strong></td>
+                                <td>{{ metrics.confusion_matrix.fn }}</td>
+                                <td>Passing students incorrectly predicted to fail</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Feature Importance Card -->
+            <div class="card">
+                <h2 class="card-title">
+                    <span style="color: var(--purple-accent);">&#128202;</span> Feature Importance
+                </h2>
+                <p class="card-desc">
+                    Normalized Gini importance (mean decrease in impurity) contributed by each academic feature.
+                </p>
+
+                <div class="image-preview-card">
+                    <img src="{{ url_for('static', filename='images/feature_importance.png') }}" alt="Feature Importance Chart">
+                </div>
+
+                <div style="margin-top: 1rem;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Academic Feature</th>
+                                <th>Gini Importance (%)</th>
+                                <th>Impact Rank</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for feature_name, importance_val in metrics.feature_importances.items() %}
+                            <tr>
+                                <td><strong>{{ feature_name }}</strong></td>
+                                <td>{{ importance_val }}%</td>
+                                <td>
+                                    {% if importance_val >= 35.0 %}
+                                        <span style="color: var(--purple-accent); font-weight: 700;">Primary Driver</span>
+                                    {% elif importance_val >= 15.0 %}
+                                        <span style="color: var(--blue-accent); font-weight: 600;">Secondary Driver</span>
+                                    {% else %}
+                                        <span style="color: var(--text-muted);">Auxiliary Feature</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Section 3: Classification Report & Dataset Breakdown -->
+        <div class="grid-2col insight-section">
+            
+            <!-- Classification Report -->
+            <div class="card">
+                <h2 class="card-title">
+                    <span style="color: var(--navy-800);">&#128221;</span> Classification Report
+                </h2>
+                <p class="card-desc">
+                    Detailed per-class evaluation metrics including Precision, Recall, and F1-Score.
+                </p>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Class Target</th>
+                            <th>Precision</th>
+                            <th>Recall</th>
+                            <th>F1-Score</th>
+                            <th>Test Support</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong style="color: var(--danger);">Fail</strong></td>
+                            <td>{{ metrics.classification_report.fail.precision }}%</td>
+                            <td>{{ metrics.classification_report.fail.recall }}%</td>
+                            <td>{{ metrics.classification_report.fail.f1 }}%</td>
+                            <td>{{ metrics.classification_report.fail.support }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong style="color: var(--success);">Pass</strong></td>
+                            <td>{{ metrics.classification_report.pass.precision }}%</td>
+                            <td>{{ metrics.classification_report.pass.recall }}%</td>
+                            <td>{{ metrics.classification_report.pass.f1 }}%</td>
+                            <td>{{ metrics.classification_report.pass.support }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+                    &bull; <strong>Precision:</strong> Out of all students predicted to pass, how many actually passed.<br>
+                    &bull; <strong>Recall:</strong> Out of all students who actually passed, how many were correctly detected.<br>
+                    &bull; <strong>F1-Score:</strong> Harmonic mean balancing precision and recall.
+                </div>
+            </div>
+
+            <!-- Dataset Information -->
+            <div class="card">
+                <h2 class="card-title">
+                    <span style="color: var(--blue-accent);">&#128194;</span> Dataset &amp; Split Information
+                </h2>
+                <p class="card-desc">
+                    Statistical summary of the student academic dataset used for model training and validation.
+                </p>
+
+                <table class="data-table">
+                    <tbody>
+                        <tr>
+                            <td><strong>Total Student Records</strong></td>
+                            <td><strong>{{ metrics.total_samples }} instances</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Training Partition (80%)</strong></td>
+                            <td>{{ metrics.train_samples }} instances</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Testing Holdout (20%)</strong></td>
+                            <td>{{ metrics.test_samples }} instances</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Class Distribution (Total)</strong></td>
+                            <td>{{ metrics.pass_count }} Pass / {{ metrics.fail_count }} Fail</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Split Methodology</strong></td>
+                            <td>Stratified random split (random_state=42)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tree Hyperparameters</strong></td>
+                            <td>criterion='gini', max_depth=4, min_samples_split=6</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <!-- Section 4: Academic Machine Learning Theory (CART & Gini Impurity) -->
+        <div class="theory-card">
+            <h2 class="card-title">
+                <span style="color: var(--purple-accent);">&#128214;</span> CART Algorithm Theory (Unit 5 – Combining Models)
+            </h2>
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                The <strong>Classification and Regression Trees (CART)</strong> methodology builds binary trees where every internal node has exactly two outgoing branches. Unlike ID3 and C4.5 which use Information Gain / Gain Ratio (Entropy), CART standardizes on <strong>Gini Impurity</strong>.
+            </p>
+
+            <h3 style="font-size: 1.05rem; color: var(--navy-900); margin-top: 1rem;">1. Gini Impurity Mathematical Formula:</h3>
+            <p style="font-size: 0.95rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                For a given node $D$ with class probabilities $p_i$ across $C$ target classes (here $C = 2$: Pass and Fail):
+            </p>
+            
+            <div class="formula-box">
+                Gini(D) = 1 - &sum;<sub>i=1</sub><sup>C</sup> ( p<sub>i</sub> )<sup>2</sup>
+            </div>
+
+            <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">
+                Where $p_i$ is the relative frequency of class $i$ at node $D$.<br>
+                &bull; When all samples belong to a single class, $p_1 = 1.0 \implies Gini = 1 - (1)^2 = 0$ (Pure node).<br>
+                &bull; When samples are equally split between Pass and Fail, $p_1 = 0.5, p_2 = 0.5 \implies Gini = 1 - (0.25 + 0.25) = 0.5$ (Maximum impurity).
+            </p>
+
+            <h3 style="font-size: 1.05rem; color: var(--navy-900); margin-top: 1.25rem;">2. Finding the Best Split:</h3>
+            <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">
+                CART tests every continuous threshold for each feature and computes the weighted Gini impurity of the split:
+            </p>
+            <div class="formula-box" style="font-size: 0.95rem;">
+                Gini<sub>split</sub>(D) = (|D<sub>1</sub>| / |D|) &times; Gini(D<sub>1</sub>) + (|D<sub>2</sub>| / |D|) &times; Gini(D<sub>2</sub>)
+            </div>
+            <p style="font-size: 0.9rem; color: var(--text-secondary);">
+                The algorithm chooses the feature and split point that yields the greatest reduction in Gini impurity ($\Delta Gini = Gini(D) - Gini_{split}(D)$).
+            </p>
+
+            <h3 style="font-size: 1.05rem; color: var(--navy-900); margin-top: 1.25rem;">3. Relation to Unit 5 (Combining Models):</h3>
+            <p style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">
+                Single decision trees have high variance and can be sensitive to small changes in training data. In Unit 5: Combining Models, CART serves as the essential fundamental base learner for advanced ensemble methods:
+                <br>&bull; <strong>Bagging (Bootstrap Aggregating):</strong> Averages predictions of multiple unpruned CART trees.
+                <br>&bull; <strong>Random Forests:</strong> Extends bagging by randomizing feature subsets at each split.
+                <br>&bull; <strong>Boosting (AdaBoost / Gradient Boosting):</strong> Sequentially fits CART trees where each tree corrects the residuals of previous trees.
+            </p>
+        </div>
+
+    </main>
+
+    <!-- Modal for Zoomed High-Resolution Tree Image -->
+    <div id="treeModal" class="modal" onclick="closeTreeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="modal-close" onclick="closeTreeModal()">&times;</span>
+            <h3 style="margin-bottom: 0.75rem; color: var(--navy-900);">High-Resolution Decision Tree</h3>
+            <img src="{{ url_for('static', filename='images/decision_tree.png') }}" alt="Zoomed Decision Tree" style="width: 100%; height: auto;">
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div>
+                <strong>Student Performance Prediction</strong> | Machine Learning Unit 5 (CART Algorithm)
+            </div>
+            <div>
+                Built with Python, Flask, Scikit-learn &amp; Matplotlib
+            </div>
+        </div>
+    </footer>
+
+    <!-- Script for Modal Zoom -->
+    <script>
+        function openTreeModal() {
+            document.getElementById('treeModal').style.display = 'flex';
+        }
+        function closeTreeModal(e) {
+            document.getElementById('treeModal').style.display = 'none';
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeTreeModal();
+            }
+        });
+    </script>
+
+</body>
+</html>

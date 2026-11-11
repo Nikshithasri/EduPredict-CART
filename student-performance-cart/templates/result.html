@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction Result | CART Student Performance</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('home') }}" class="nav-brand">
+                <span class="brand-badge">CART ML</span>
+                <div>
+                    <span class="brand-title">EduPredict</span>
+                    <span class="brand-subtitle">Academic Intelligence</span>
+                </div>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('home') }}" class="nav-link">Home</a></li>
+                <li><a href="{{ url_for('predict') }}" class="nav-link">Predict</a></li>
+                <li><a href="{{ url_for('insights') }}" class="nav-link">Model Insights</a></li>
+                <li><a href="{{ url_for('predict') }}" class="nav-link nav-cta-btn">Predict Again &rarr;</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        
+        <div class="result-container">
+
+            <!-- Result Card -->
+            <div class="result-card {{ 'pass' if result == 'PASS' else 'fail' }}">
+                <span class="tag-badge" style="margin-bottom: 0.5rem;">CART Classification Output</span>
+                
+                <h2 style="font-size: 1.1rem; color: var(--navy-700); text-transform: uppercase; letter-spacing: 1px; margin-top: 0.5rem;">
+                    Predicted Student Status
+                </h2>
+
+                <!-- Big Result Badge -->
+                <div class="outcome-badge {{ 'pass' if result == 'PASS' else 'fail' }}">
+                    {{ result }}
+                </div>
+
+                <!-- Confidence Chip -->
+                <div>
+                    <span class="confidence-chip {{ 'pass' if result == 'PASS' else 'fail' }}">
+                        <span>&#10004;</span> Confidence: {{ confidence }}%
+                    </span>
+                </div>
+
+                <!-- Probability Distribution Bar -->
+                <div class="prob-bar-wrapper">
+                    <div class="prob-labels">
+                        <span style="color: var(--success);">PASS: {{ pass_prob }}%</span>
+                        <span style="color: var(--danger);">FAIL: {{ fail_prob }}%</span>
+                    </div>
+                    <div class="prob-track">
+                        <div class="prob-fill-pass" style="width: {{ pass_prob }}%;"></div>
+                        <div class="prob-fill-fail" style="width: {{ fail_prob }}%;"></div>
+                    </div>
+                </div>
+
+                <!-- Educational Explanation Box -->
+                <div class="explanation-box">
+                    <div class="explanation-title">
+                        <span style="color: var(--purple-accent);">&#128161;</span> CART Model Decision Rationale
+                    </div>
+                    <p style="font-size: 0.95rem; color: var(--navy-800); margin-bottom: 0.5rem;">
+                        {{ explanation.summary }}
+                    </p>
+                    {% if explanation.points %}
+                        <ul class="explanation-list">
+                            {% for pt in explanation.points %}
+                                <li>{{ pt }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <!-- Student Details Summary Table -->
+                <div style="text-align: left; margin-top: 1.5rem;">
+                    <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--navy-900); margin-bottom: 0.5rem;">
+                        Submitted Academic Profile
+                    </h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Academic Feature</th>
+                                <th>Submitted Value</th>
+                                <th>Evaluation Benchmark</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Attendance Percentage</strong></td>
+                                <td>{{ student.attendance }}%</td>
+                                <td>
+                                    {% if student.attendance >= 75 %}
+                                        <span style="color: var(--success); font-weight: 600;">Good (&#8805; 75%)</span>
+                                    {% elif student.attendance >= 60 %}
+                                        <span style="color: #d97706; font-weight: 600;">Average (60–75%)</span>
+                                    {% else %}
+                                        <span style="color: var(--danger); font-weight: 600;">Low (&lt; 60%)</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Daily Study Hours</strong></td>
+                                <td>{{ student.study_hours }} hrs/day</td>
+                                <td>
+                                    {% if student.study_hours >= 4.0 %}
+                                        <span style="color: var(--success); font-weight: 600;">High (&#8805; 4 hrs)</span>
+                                    {% elif student.study_hours >= 2.0 %}
+                                        <span style="color: #d97706; font-weight: 600;">Moderate (2–4 hrs)</span>
+                                    {% else %}
+                                        <span style="color: var(--danger); font-weight: 600;">Minimal (&lt; 2 hrs)</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Internal Marks</strong></td>
+                                <td>{{ student.internal_marks }} / 100</td>
+                                <td>
+                                    {% if student.internal_marks >= 50 %}
+                                        <span style="color: var(--success); font-weight: 600;">Above Average (&#8805; 50)</span>
+                                    {% else %}
+                                        <span style="color: var(--danger); font-weight: 600;">Critical (&lt; 50)</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Assignment Score</strong></td>
+                                <td>{{ student.assignment_score }} / 100</td>
+                                <td>
+                                    {% if student.assignment_score >= 60 %}
+                                        <span style="color: var(--success); font-weight: 600;">Completed (&#8805; 60)</span>
+                                    {% else %}
+                                        <span style="color: var(--danger); font-weight: 600;">Lagging (&lt; 60)</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Navigation Action Buttons -->
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem;">
+                    <a href="{{ url_for('predict') }}" class="btn btn-primary btn-lg">
+                        <span>&#8635;</span> Predict Another Student
+                    </a>
+                    <a href="{{ url_for('insights') }}" class="btn btn-secondary btn-lg">
+                        <span>&#128065;</span> View Decision Tree in Insights
+                    </a>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div>
+                <strong>Student Performance Prediction</strong> | Machine Learning Unit 5 (CART Algorithm)
+            </div>
+            <div>
+                Built with Python, Flask, Scikit-learn &amp; Matplotlib
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

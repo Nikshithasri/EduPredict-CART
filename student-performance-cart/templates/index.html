@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Performance Prediction | CART Machine Learning</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('home') }}" class="nav-brand">
+                <span class="brand-badge">CART ML</span>
+                <div>
+                    <span class="brand-title">EduPredict</span>
+                    <span class="brand-subtitle">Academic Intelligence</span>
+                </div>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('home') }}" class="nav-link active">Home</a></li>
+                <li><a href="{{ url_for('predict') }}" class="nav-link">Predict</a></li>
+                <li><a href="{{ url_for('insights') }}" class="nav-link">Model Insights</a></li>
+                <li><a href="{{ url_for('predict') }}" class="nav-link nav-cta-btn">Start Prediction &rarr;</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <!-- Hero Card -->
+        <section class="hero-card">
+            <span class="tag-badge" style="background: rgba(255,255,255,0.2); color: #ffffff;">ML Unit 5: Combining Models</span>
+            <h1>Student Performance Prediction Using Classification and Regression Trees (CART)</h1>
+            <p class="hero-subtitle">
+                An educational Machine Learning web application implementing the CART Decision Tree algorithm with Gini Impurity to classify and predict student academic success (PASS or FAIL).
+            </p>
+
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <a href="{{ url_for('predict') }}" class="btn btn-primary btn-lg">
+                    <span>&#9658;</span> Start Prediction
+                </a>
+                <a href="{{ url_for('insights') }}" class="btn btn-secondary btn-lg" style="background: rgba(255,255,255,0.15); color: #ffffff; border: 1px solid rgba(255,255,255,0.3);">
+                    <span>&#128202;</span> View Model Insights
+                </a>
+            </div>
+
+            <div class="hero-meta">
+                <div class="hero-meta-item">
+                    <span class="hero-meta-label">Model Accuracy</span>
+                    <span class="hero-meta-val" style="color: #4ade80;">{{ metrics.test_accuracy }}%</span>
+                </div>
+                <div class="hero-meta-item">
+                    <span class="hero-meta-label">Splitting Criterion</span>
+                    <span class="hero-meta-val">Gini Impurity</span>
+                </div>
+                <div class="hero-meta-item">
+                    <span class="hero-meta-label">Dataset Split</span>
+                    <span class="hero-meta-val">80% Train / 20% Test</span>
+                </div>
+                <div class="hero-meta-item">
+                    <span class="hero-meta-label">Total Student Records</span>
+                    <span class="hero-meta-val">{{ metrics.total_samples }} Samples</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card green">
+                <div class="stat-label">Model Test Accuracy</div>
+                <div class="stat-value" style="color: var(--success);">{{ metrics.test_accuracy }}%</div>
+                <div class="stat-subtext">Evaluated on {{ metrics.test_samples }} unseen test samples</div>
+            </div>
+            <div class="stat-card blue">
+                <div class="stat-label">Training Accuracy</div>
+                <div class="stat-value" style="color: var(--blue-accent);">{{ metrics.train_accuracy }}%</div>
+                <div class="stat-subtext">Fitted across {{ metrics.train_samples }} training instances</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Algorithm</div>
+                <div class="stat-value" style="font-size: 1.5rem; color: var(--purple-accent);">CART (Tree)</div>
+                <div class="stat-subtext">Binary recursive partitioning</div>
+            </div>
+            <div class="stat-card navy">
+                <div class="stat-label">Input Features</div>
+                <div class="stat-value" style="font-size: 1.5rem; color: var(--navy-800);">4 Features</div>
+                <div class="stat-subtext">Attendance, Study, Internals, Assignments</div>
+            </div>
+        </div>
+
+        <!-- 2 Column Section: What is CART & Key Input Features -->
+        <div class="grid-2col">
+            <!-- CART Overview Card -->
+            <div class="card">
+                <h2 class="card-title">
+                    <span style="color: var(--purple-accent);">&#128218;</span> What is the CART Algorithm?
+                </h2>
+                <p class="card-desc">
+                    <strong>Classification and Regression Trees (CART)</strong> is a foundational supervised Machine Learning algorithm introduced by Leo Breiman. In this application, CART is used as a <strong>Classification Tree</strong> to classify students into <strong>PASS</strong> or <strong>FAIL</strong> categories.
+                </p>
+                
+                <div style="background-color: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem; margin-top: 1rem;">
+                    <h4 style="font-size: 0.95rem; color: var(--navy-900); margin-bottom: 0.5rem;">Core Mechanics of CART:</h4>
+                    <ul style="padding-left: 1.25rem; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6;">
+                        <li><strong>Binary Splitting:</strong> Every parent node splits into exactly two child nodes (Yes / No question).</li>
+                        <li><strong>Gini Impurity Criterion:</strong> Measures the likelihood that a randomly chosen element would be incorrectly labeled. The split minimizing weighted Gini impurity is chosen.</li>
+                        <li><strong>Interpretability:</strong> The resulting decision tree generates transparent, human-readable rules that educators and students can easily inspect.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Features Card -->
+            <div class="card">
+                <h2 class="card-title">
+                    <span style="color: var(--blue-accent);">&#127891;</span> Evaluated Academic Features
+                </h2>
+                <p class="card-desc">
+                    The CART classifier evaluates four fundamental academic indicators to predict student semester outcomes:
+                </p>
+
+                <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.75rem;">
+                    <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                        <span style="background: #eff6ff; color: #2563eb; font-weight: bold; padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.85rem;">1</span>
+                        <div>
+                            <strong style="color: var(--navy-900); font-size: 0.95rem;">Attendance Percentage (0–100%):</strong>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary);">Measures classroom engagement and consistency. Strong correlation with exam readiness.</p>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                        <span style="background: #f5f3ff; color: #7c3aed; font-weight: bold; padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.85rem;">2</span>
+                        <div>
+                            <strong style="color: var(--navy-900); font-size: 0.95rem;">Daily Study Hours (0–12 hrs):</strong>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary);">Hours devoted to self-study, problem practice, and revision outside of class lectures.</p>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                        <span style="background: #eff6ff; color: #2563eb; font-weight: bold; padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.85rem;">3</span>
+                        <div>
+                            <strong style="color: var(--navy-900); font-size: 0.95rem;">Internal Marks (0–100):</strong>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary);">Midterm and sessional examinations score, reflecting core subject grasp.</p>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                        <span style="background: #f5f3ff; color: #7c3aed; font-weight: bold; padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.85rem;">4</span>
+                        <div>
+                            <strong style="color: var(--navy-900); font-size: 0.95rem;">Assignment Score (0–100):</strong>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary);">Practical lab homework and continuous assignment submissions.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Academic Workflow Section -->
+        <div class="card" style="margin-top: 2rem;">
+            <h2 class="card-title">
+                <span style="color: var(--purple-accent);">&#9881;</span> End-to-End Machine Learning Pipeline
+            </h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; text-align: center;">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.25rem;">&#128196;</div>
+                    <div style="font-weight: 700; color: var(--navy-900); font-size: 0.95rem;">1. Data Collection</div>
+                    <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem;">250 student performance records with continuous academic attributes.</div>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; text-align: center;">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.25rem;">&#128202;</div>
+                    <div style="font-weight: 700; color: var(--navy-900); font-size: 0.95rem;">2. 80:20 Train Split</div>
+                    <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem;">Stratified division to ensure balanced Pass/Fail class representation.</div>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; text-align: center;">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.25rem;">&#127795;</div>
+                    <div style="font-weight: 700; color: var(--navy-900); font-size: 0.95rem;">3. CART Training</div>
+                    <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem;">DecisionTreeClassifier fitting with Gini impurity optimization.</div>
+                </div>
+                <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; text-align: center;">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.25rem;">&#128640;</div>
+                    <div style="font-weight: 700; color: var(--navy-900); font-size: 0.95rem;">4. Web Deployment</div>
+                    <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem;">Flask application providing interactive prediction and tree visualization.</div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div>
+                <strong>Student Performance Prediction</strong> | Machine Learning Unit 5 (CART Algorithm)
+            </div>
+            <div>
+                Built with Python, Flask, Scikit-learn &amp; Matplotlib
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

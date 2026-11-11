@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predict Student Performance | CART Classifier</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('home') }}" class="nav-brand">
+                <span class="brand-badge">CART ML</span>
+                <div>
+                    <span class="brand-title">EduPredict</span>
+                    <span class="brand-subtitle">Academic Intelligence</span>
+                </div>
+            </a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('home') }}" class="nav-link">Home</a></li>
+                <li><a href="{{ url_for('predict') }}" class="nav-link active">Predict</a></li>
+                <li><a href="{{ url_for('insights') }}" class="nav-link">Model Insights</a></li>
+                <li><a href="{{ url_for('predict') }}" class="nav-link nav-cta-btn">Start Prediction &rarr;</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        
+        <div class="page-header" style="text-align: center; max-width: 720px; margin: 0 auto 2rem auto;">
+            <span class="tag-badge">ML Model Inference</span>
+            <h1>Predict Student Performance</h1>
+            <p>
+                Enter the student's continuous academic indicators below. The CART decision tree will traverse its learned decision boundaries to predict whether the student will <strong>PASS</strong> or <strong>FAIL</strong>.
+            </p>
+        </div>
+
+        <div class="form-container">
+
+            <!-- Flash Error Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Quick Presets -->
+            <div class="presets-bar">
+                <span class="presets-label">&#9889; Quick Test Presets:</span>
+                <button type="button" class="preset-chip" onclick="fillPreset(92, 6.5, 85, 90)">
+                    High Achiever
+                </button>
+                <button type="button" class="preset-chip" onclick="fillPreset(68, 3.5, 54, 62)">
+                    Average / Borderline
+                </button>
+                <button type="button" class="preset-chip" onclick="fillPreset(48, 1.2, 34, 42)">
+                    At-Risk Student
+                </button>
+            </div>
+
+            <!-- Prediction Form Card -->
+            <div class="card" style="box-shadow: var(--shadow-md); padding: 2rem;">
+                <form action="{{ url_for('predict') }}" method="POST" id="predictionForm" novalidate>
+                    
+                    <div class="form-grid">
+                        
+                        <!-- Feature 1: Attendance Percentage -->
+                        <div class="form-group">
+                            <label class="form-label" for="attendance">
+                                <span>Attendance Percentage</span>
+                                <span class="input-hint">0 – 100%</span>
+                            </label>
+                            <div class="input-wrapper">
+                                <input 
+                                    type="number" 
+                                    class="form-input" 
+                                    id="attendance" 
+                                    name="attendance" 
+                                    min="0" 
+                                    max="100" 
+                                    step="0.1" 
+                                    placeholder="e.g. 82.5" 
+                                    value="{{ attendance if attendance is defined and attendance >= 0 else '' }}" 
+                                    required
+                                >
+                                <span class="input-unit">%</span>
+                            </div>
+                            <span class="form-help-text">College attendance rate over the semester</span>
+                        </div>
+
+                        <!-- Feature 2: Study Hours Per Day -->
+                        <div class="form-group">
+                            <label class="form-label" for="study_hours">
+                                <span>Study Hours / Day</span>
+                                <span class="input-hint">0 – 12 hrs</span>
+                            </label>
+                            <div class="input-wrapper">
+                                <input 
+                                    type="number" 
+                                    class="form-input" 
+                                    id="study_hours" 
+                                    name="study_hours" 
+                                    min="0" 
+                                    max="12" 
+                                    step="0.1" 
+                                    placeholder="e.g. 4.5" 
+                                    value="{{ study_hours if study_hours is defined and study_hours >= 0 else '' }}" 
+                                    required
+                                >
+                                <span class="input-unit">hrs/day</span>
+                            </div>
+                            <span class="form-help-text">Average self-study duration outside lecture hours</span>
+                        </div>
+
+                        <!-- Feature 3: Internal Marks -->
+                        <div class="form-group">
+                            <label class="form-label" for="internal_marks">
+                                <span>Internal Marks</span>
+                                <span class="input-hint">0 – 100</span>
+                            </label>
+                            <div class="input-wrapper">
+                                <input 
+                                    type="number" 
+                                    class="form-input" 
+                                    id="internal_marks" 
+                                    name="internal_marks" 
+                                    min="0" 
+                                    max="100" 
+                                    step="0.1" 
+                                    placeholder="e.g. 74.0" 
+                                    value="{{ internal_marks if internal_marks is defined and internal_marks >= 0 else '' }}" 
+                                    required
+                                >
+                                <span class="input-unit">/100</span>
+                            </div>
+                            <span class="form-help-text">Midterm and continuous assessment test scores</span>
+                        </div>
+
+                        <!-- Feature 4: Assignment Score -->
+                        <div class="form-group">
+                            <label class="form-label" for="assignment_score">
+                                <span>Assignment Score</span>
+                                <span class="input-hint">0 – 100</span>
+                            </label>
+                            <div class="input-wrapper">
+                                <input 
+                                    type="number" 
+                                    class="form-input" 
+                                    id="assignment_score" 
+                                    name="assignment_score" 
+                                    min="0" 
+                                    max="100" 
+                                    step="0.1" 
+                                    placeholder="e.g. 88.0" 
+                                    value="{{ assignment_score if assignment_score is defined and assignment_score >= 0 else '' }}" 
+                                    required
+                                >
+                                <span class="input-unit">/100</span>
+                            </div>
+                            <span class="form-help-text">Practical laboratory and project homework marks</span>
+                        </div>
+
+                    </div>
+
+                    <!-- Client-side Error Banner -->
+                    <div id="jsErrorBanner" class="alert alert-danger" style="display: none; margin-bottom: 1.25rem;"></div>
+
+                    <!-- Submit Button -->
+                    <div style="display: flex; gap: 1rem; align-items: center; justify-content: flex-end;">
+                        <button type="reset" class="btn btn-secondary">
+                            Reset Fields
+                        </button>
+                        <button type="submit" class="btn btn-primary btn-lg" style="width: auto;">
+                            <span>&#9881;</span> Predict Performance
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+
+            <!-- Context Note Card -->
+            <div style="margin-top: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+                Predictions are generated by traversing the Scikit-learn <code>DecisionTreeClassifier</code> fitted on 250 verified student training profiles using the CART algorithm with Gini impurity minimization.
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div>
+                <strong>Student Performance Prediction</strong> | Machine Learning Unit 5 (CART Algorithm)
+            </div>
+            <div>
+                Built with Python, Flask, Scikit-learn &amp; Matplotlib
+            </div>
+        </div>
+    </footer>
+
+    <!-- Form Validation and Presets Script -->
+    <script>
+        function fillPreset(attendance, studyHours, internalMarks, assignmentScore) {
+            document.getElementById('attendance').value = attendance;
+            document.getElementById('study_hours').value = studyHours;
+            document.getElementById('internal_marks').value = internalMarks;
+            document.getElementById('assignment_score').value = assignmentScore;
+            
+            // Clear any error message
+            const errBanner = document.getElementById('jsErrorBanner');
+            errBanner.style.display = 'none';
+        }
+
+        // Client-side validation before submission
+        document.getElementById('predictionForm').addEventListener('submit', function(e) {
+            const att = parseFloat(document.getElementById('attendance').value);
+            const hrs = parseFloat(document.getElementById('study_hours').value);
+            const intMarks = parseFloat(document.getElementById('internal_marks').value);
+            const assign = parseFloat(document.getElementById('assignment_score').value);
+
+            const errBanner = document.getElementById('jsErrorBanner');
+            errBanner.style.display = 'none';
+            errBanner.innerHTML = '';
+
+            let errors = [];
+
+            if (isNaN(att) || att < 0 || att > 100) {
+                errors.push("Attendance must be a valid number between 0% and 100%.");
+            }
+            if (isNaN(hrs) || hrs < 0 || hrs > 12) {
+                errors.push("Study hours per day must be between 0 and 12 hours.");
+            }
+            if (isNaN(intMarks) || intMarks < 0 || intMarks > 100) {
+                errors.push("Internal marks must be a valid score between 0 and 100.");
+            }
+            if (isNaN(assign) || assign < 0 || assign > 100) {
+                errors.push("Assignment score must be a valid score between 0 and 100.");
+            }
+
+            if (errors.length > 0) {
+                e.preventDefault();
+                errBanner.innerHTML = errors.map(msg => `<div>• ${msg}</div>`).join('');
+                errBanner.style.display = 'block';
+                errBanner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        });
+    </script>
+
+</body>
+</html>
